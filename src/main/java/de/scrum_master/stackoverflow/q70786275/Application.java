@@ -15,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.security.Security;
 
 public class Application {
@@ -29,7 +30,7 @@ public class Application {
   public void decryptPrivateKey() throws IOException, PKCSException, OperatorCreationException {
     InputStream privateKeyInputStream = getPrivateKeyInputStream(); // reads the key file from classpath and share as DataStream
     System.out.println("InputStreamExists --> " + privateKeyInputStream.available());
-    PEMParser pemParser = new PEMParser(new InputStreamReader(privateKeyInputStream));
+    PEMParser pemParser = new PEMParser(new InputStreamReader(privateKeyInputStream, StandardCharsets.UTF_8));
     Object pemObject = pemParser.readObject();
     if (pemObject instanceof PKCS8EncryptedPrivateKeyInfo) {
       // Handle the case where the private key is encrypted.
