@@ -11,7 +11,7 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <bouncycastle.version>1.64</bouncycastle.version>
+    <bouncycastle.version>1.70</bouncycastle.version>
     <main-class>de.scrum_master.stackoverflow.q70786275.Application</main-class>
   </properties>
 
