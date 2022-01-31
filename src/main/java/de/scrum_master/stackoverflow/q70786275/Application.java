@@ -18,7 +18,8 @@ import java.security.Security;
 
 public class Application {
   public static void main(String[] args) throws Exception {
-    Security.addProvider(new BouncyCastleProvider());
+    BouncyCastleProvider securityProvider = new BouncyCastleProvider();
+    Security.addProvider(securityProvider);
     InputStream privateKeyInputStream = new FileInputStream("src/main/resources/key.k8");
     PEMParser pemParser = new PEMParser(new InputStreamReader(privateKeyInputStream, StandardCharsets.UTF_8));
     Object pemObject = pemParser.readObject();
@@ -32,7 +33,11 @@ public class Application {
       System.out.println("------------------------------------------------------------");
 
       String passphrase = "123456";
-      InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(passphrase.toCharArray());
+      InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder()
+        // Explicitly setting security provider helps to avoid ambiguities which otherwise can cause problems,
+        // e.g. on OpenJ9 JVMs. See https://github.com/bcgit/bc-java/issues/1099#issuecomment-1025253004.
+        .setProvider(securityProvider)
+        .build(passphrase.toCharArray());
 
       // Gather and print some data, mimicking what happens in PKCS8EncryptedPrivateKeyInfo.decryptPrivateKeyInfo
       // These are all the same on OpenJ9 and other JVM types
@@ -42,12 +47,14 @@ public class Application {
       System.out.println(encIn.available());
       InputStream decrytorInputStream = decryptor.getInputStream(encIn);
       System.out.println(decrytorInputStream.getClass());
-      // Here OpenJ9 yields a byte[1232], while other JVM types yield byte[1218]
+      // Without explicitly setting decryptor provider's security provider to BC,
+      // OpenJ9 yields a byte[1232] here, while other JVM types yield byte[1218].
       byte[] readAll = Streams.readAll(decrytorInputStream);
       System.out.println(readAll.length);
       System.out.println("------------------------------------------------------------");
 
-      PrivateKeyInfo privateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(pkcs8Prov); // Fails here on OpenJ9
+      // Without explicitly setting decryptor provider's security provider to BC, this fails on OpenJ9
+      PrivateKeyInfo privateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(pkcs8Prov);
       System.out.println("Private key algorithm: " + privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm());
       System.out.println("Has public key: " + privateKeyInfo.hasPublicKey());
     }
